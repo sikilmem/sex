@@ -36,24 +36,19 @@ app.post("/apiv2.php", (req, res) => {
   const token = req.body?.token?.trim();
 
   if (!token) {
-    return res.status(400).json({ error: "Missing 'token' field in request body" });
+    return res.status(400).send("Missing 'token' field in request body");
   }
-
-  console.log(`[${req.ip}] Token alındı: ${token}`);
 
   const licenseJson = JSON.stringify(buildLicensePayload());
   const encryptedHex = xorEncrypt(licenseJson, token);
 
-  console.log(`[${req.ip}] Şifreli veri gönderildi (${encryptedHex.length} hex karakter)`);
-
-  res.json({ data: encryptedHex });
+  res.setHeader("Content-Type", "text/plain");
+  res.send(encryptedHex);
 });
 
-// Lokal test için
 if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`Sunucu çalışıyor → http://localhost:${PORT}`);
-    console.log("Durdurmak için Ctrl+C\n");
   });
 }
 
