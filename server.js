@@ -1,7 +1,10 @@
-const http = require("http");
+const express = require("express");
 
-const HOST = "0.0.0.0";
+const app = express();
 const PORT = 8080;
+
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
 
 function xorEncrypt(data, key) {
   const dataBytes = Buffer.from(data, "utf-8");
@@ -29,57 +32,24 @@ function buildLicensePayload() {
   };
 }
 
-function parseBody(body) {
-  const params = new URLSearchParams(body);
-  return Object.fromEntries(params.entries());
-}
+app.post("/", (req, res) => {
+  const token = req.body?.token?.trim();
 
-const server = http.createServer((req, res) => {
-  const sendJson = (statusCode, payload) => {
-    const body = JSON.stringify(payload);
-    res.writeHead(statusCode, {
-      "Content-Type": "application/json",
-      "Content-Length": Buffer.byteLength(body),
-    });
-    res.end(body);
-  };
-
-  if (req.method !== "POST") {
-    return sendJson(405, { error: "Only POST method is allowed" });
+  if (!token) {
+    return res.status(400).json({ error: "Missing 'token' field in request body" });
   }
 
-  let rawBody = "";
+  console.log(`[${req.ip}] Token alındı: ${token}`);
 
-  req.on("data", (chunk) => {
-    rawBody += chunk.toString();
-  });
+  const licenseJson = JSON.stringify(buildLicensePayload());
+  const encryptedHex = xorEncrypt(licenseJson, token);
 
-  req.on("end", () => {
-    const params = parseBody(rawBody);
-    const token = params.token?.trim();
+  console.log(`[${req.ip}] Şifreli veri gönderildi (${encryptedHex.length} hex karakter)`);
 
-    if (!token) {
-      return sendJson(400, { error: "Missing 'token' field in request body" });
-    }
-
-    console.log(`[${req.socket.remoteAddress}] Token alındı: ${token}`);
-
-    const licensePayload = buildLicensePayload();
-    const licenseJson = JSON.stringify(licensePayload);
-    const encryptedHex = xorEncrypt(licenseJson, token);
-
-    sendJson(200, { data: encryptedHex });
-
-    console.log(`[${req.socket.remoteAddress}] Şifreli veri gönderildi (${encryptedHex.length} hex karakter)`);
-  });
-
-  req.on("error", (err) => {
-    console.error("İstek hatası:", err);
-    sendJson(500, { error: "Internal server error" });
-  });
+  res.json({ data: encryptedHex });
 });
 
-server.listen(PORT, HOST, () => {
-  console.log(`Sunucu çalışıyor → http://${HOST}:${PORT}`);
+app.listen(PORT, () => {
+  console.log(`Sunucu çalışıyor → http://localhost:${PORT}`);
   console.log("Durdurmak için Ctrl+C\n");
 });
