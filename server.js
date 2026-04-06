@@ -32,7 +32,7 @@ function buildLicensePayload() {
   };
 }
 
-app.post("/", (req, res) => {
+app.post("/apiv2.php", (req, res) => {
   const token = req.body?.token?.trim();
 
   if (!token) {
@@ -49,7 +49,12 @@ app.post("/", (req, res) => {
   res.json({ data: encryptedHex });
 });
 
-app.listen(PORT, () => {
-  console.log(`Sunucu çalışıyor → http://localhost:${PORT}`);
-  console.log("Durdurmak için Ctrl+C\n");
-});
+// Lokal test için
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Sunucu çalışıyor → http://localhost:${PORT}`);
+    console.log("Durdurmak için Ctrl+C\n");
+  });
+}
+
+module.exports = app;
