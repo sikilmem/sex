@@ -26,7 +26,7 @@ function buildLicensePayload() {
     key_level: 1,
     app_name: "vsta",
     app_version: "1.0.0",
-    days_left: 365,
+    days_left: 1337,
     expires_at: "2027-04-06 21:58:54",
     timestamp: now,
   };
